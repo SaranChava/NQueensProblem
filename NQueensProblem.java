@@ -10,7 +10,7 @@ public class NQueensProblem
     public int totalRestartsCount = 0;
     public int hc=0;
     boolean restartFlag = false;
-
+// Main method responsible for running the N-Queens problem solving algorithms.
     public static void main(String[] args)
     {   
         int iterCount = 0;
@@ -23,7 +23,7 @@ public class NQueensProblem
         int iterations = random.nextInt(400) + 100;
         int i=0;
         int[] res = new int[]{0,0,0,0};
-
+        boolean flag = false;
 
         //Taking the input for the number of queens.
         Scanner obj = new Scanner(System.in);
@@ -42,21 +42,25 @@ public class NQueensProblem
         while(i<iterations)
         {
             NQueensProblem algorithm = new NQueensProblem();
+            if (i<5){
+                flag = true;
+            }
             if(selection==1){
-                res = algorithm.Hill_Climb_Search(queens,option);
+                res = algorithm.Hill_Climb_Search(queens,flag);
             }
             else if(selection==2){
-                res = algorithm.Hill_Climb_Search_With_Sideways_Move(queens,option);
+                res = algorithm.Hill_Climb_Search_With_Sideways_Move(queens,flag);
             }
             else if(selection==3){
-                res = algorithm.Hill_Climb_Random_Restart_With_Sideways_Move(queens,option);
+                res = algorithm.Hill_Climb_Random_Restart_With_Sideways_Move(queens,flag);
             }
             else if(selection==4){
-                res = algorithm.Hill_Climb_Random_Restart_Without_Sideways_Move(queens,option);
+                res = algorithm.Hill_Climb_Random_Restart_Without_Sideways_Move(queens,flag);
             }
             else{
                 System.out.println("Option not available, try again!");
             }
+            
             
             succesfulMovesCount  = succesfulMovesCount+res[0];
             succesfulIterCount = succesfulIterCount +res[1];
@@ -64,6 +68,8 @@ public class NQueensProblem
             failureItersCount = failureItersCount + res[3];
             i++;
         }
+
+        // Print results and statistics.
         System.out.println("Number Of Queens: " + queens);
         System.out.println("Number of Iterations: " + iterations);
         if(failureItersCount!=0) 
@@ -81,62 +87,71 @@ public class NQueensProblem
         System.out.println("No Of steps incase of success: " + String.format("%.4f", succesfullAvg));
         System.out.println("No of steps incase of failure: " + String.format("%.4f", failureAvg));
     }
-   
-    public int[] Hill_Climb_Search(int nqueen,int task_To_Be_Done) 
+
+    // Hill Climbing Search for the N-Queens problem.
+    public int[] Hill_Climb_Search(int nqueen,boolean flag) 
     {
-        NQueenBoard nqb_Successor = new NQueenBoard();
-        NQueenBoard board = get_Random_State(nqueen);
+        NQueenBoard currBoard = new NQueenBoard();
+        NQueenBoard board = getRandomBoard(nqueen);
         int[] result = new int[4];
-        boolean is_Passed = false;
-        boolean is_Fail = false;
-        ArrayList<NQueenBoard> successor = new ArrayList<NQueenBoard>();
-        set_Heuristic(board);
+        boolean isSolved = false;
+        boolean isFailure = false;
+        ArrayList<NQueenBoard> child = new ArrayList<NQueenBoard>();
+
+                // Initialize the current board.
+
+        setH(board);
         System.out.println("Starting State");
-        print_NQueen_Board(board);
-        while (!is_Fail && !is_Passed) 
+        showBoard(board);
+        while (!isFailure && !isSolved) 
         {
-            successor = find_The_Successors(board);
+            child = childBoards(board);
+
+// Calculate heuristic for each child.
+
             int i=0;
-            while(i<successor.size())
+            while(i<child.size())
             {
-                set_Heuristic(successor.get(i));
+                setH(child.get(i));
                 i++;
             }
-            nqb_Successor = get_Next_Best_Successor(successor);
-            if (board.get_Heuristic_Cost() == 0) 
+            // Select the next best child.
+            currBoard = nextBestChild(child);
+            if (board.getHCost() == 0) 
             {
-                if(task_To_Be_Done == 2) {
+                if(flag == true) {
                     System.out.println("  |   ");
                     System.out.println("  V   ");
                 }
                 System.out.println("Destination State");
-                print_NQueen_Board(board);
+                showBoard(board);
                 succesfulMoveCount = +moveCount;
                 ++succesfulIterCount;
-                is_Passed = true;        
+                isSolved = true;        
             } 
-            else if (nqb_Successor.get_Heuristic_Cost() < board.get_Heuristic_Cost()) 
+            else if (currBoard.getHCost() < board.getHCost()) 
             {
-                // if yes update current Node with best Successor
-                board = nqb_Successor;
-                if(task_To_Be_Done == 2) {
+                // Update the current board with the best possible child.
+                if(flag == true) {
                     System.out.println("  |   ");
                     System.out.println("  V   ");
-                    print_NQueen_Board(board);
+                    showBoard(board);
                 }
+                // if yes update current Node with best Successor
+                board = currBoard;
                 ++moveCount;
             } 
             else 
             {
-                if(task_To_Be_Done == 2) {
+                if(flag == true) {
                     System.out.println("  |   ");
                     System.out.println("  V   ");
                 }
                 System.out.println("Local Minima State");
-                print_NQueen_Board(board);
+                showBoard(board);
                 ++failureIterCount;
                 failureMoveCount = +moveCount;
-                is_Fail = true; 
+                isFailure = true; 
             }
         }
         result[0] = succesfulMoveCount;
@@ -145,227 +160,241 @@ public class NQueensProblem
         result[3] = failureIterCount;
         return result;
     }
-    /*
-        * Heuristic_Cost_Comparator class implementing Comparator interface and we override the compare method present in Comparator interface
-        * The compare method returns the integer value based on the parameterss passed
-    */
-    public class Heuristic_Cost_Comparator implements Comparator<NQueenBoard> 
-    {
-        @Override
-        public int compare(NQueenBoard l1, NQueenBoard l2) 
-        {
-            if(l1.get_Heuristic_Cost() > l2.get_Heuristic_Cost())
-            {
-                return 1;
-            }
-            if(l1.get_Heuristic_Cost() < l2.get_Heuristic_Cost())
-            {
-                return -1;
-            }
-            return 0;
+
+    public class hCost implements Comparator<NQueenBoard> {
+    @Override
+    public int compare(NQueenBoard l1, NQueenBoard l2) {
+        // Compare the heuristic cost of two NQueenBoard instances.
+        if (l1.getHCost() > l2.getHCost()) {
+            return 1; // l1 has a higher cost, so it comes after l2.
+        } else if (l1.getHCost() < l2.getHCost()) {
+            return -1; // l1 has a lower cost, so it comes before l2.
         }
+        // If the costs are equal, return 0, indicating they are equivalent.
+        return 0;
     }
-    public class NQueenBoard 
-    {
-        int[][] board;
-        int heuristic_Cost;
-
-        public int[][] get_NQueen_Board() 
-        {
-            return board;
-        }
-        public void set_NQueen_Board(int[][] board) 
-        {
-            this.board = board;
-        }
-
-        public int get_Heuristic_Cost() 
-        {
-            return heuristic_Cost;
-        }
-
-        public void set_Heuristic_Cost(int heuristicCost) 
-        {
-            this.heuristic_Cost = heuristicCost;
-        }
-
-        @Override
-        public String toString() 
-        {
-            return "NQueenBoard{" + "board=" + Arrays.toString(board) +", heuristicCost=" + heuristic_Cost +'}';
-        }
     }
+
+    public class NQueenBoard {
+    int[][] board;          // 2D array representing the N-Queens board
+    int heuristicCost;      // Heuristic cost associated with the board
+
+    // Getter for the board
+    public int[][] getBoard() {
+        return board;
+    }
+
+    // Setter for the board
+    public void setBoard(int[][] board) {
+        this.board = board;
+    }
+
+    // Getter for the heuristic cost
+    public int getHCost() {
+        return heuristicCost;
+    }
+
+    // Setter for the heuristic cost
+    public void setHCost(int heuristicCost) {
+        this.heuristicCost = heuristicCost;
+    }
+
+    @Override
+    public String toString() {
+        // Return a string representation of the NQueenBoard
+        return "NQueenBoard{" +
+               "board=" + Arrays.toString(board) +
+               ", heuristicCost=" + heuristicCost +
+               '}';
+    }
+}
+
+
         /*
-        *  find_The_Successors function is used for getting possible successors to a given current state it accepts NQueenBoard as Parameter
-        *  It returns an arraylist with NQueen board type which contains the possible successors
+    * childBoards function is used for getting possible successors to a given current state.
+    * It accepts an NQueenBoard as a parameter, representing the current state of the board.
+    * It returns an ArrayList of NQueenBoard objects, each representing a possible successor state.
     */
-    public ArrayList<NQueenBoard> find_The_Successors(NQueenBoard board)
-    {
-        ArrayList<NQueenBoard> succesor_List = new ArrayList<NQueenBoard>();
-        int new_Queen_Column,  cur_Queen_Row,cur_Queen_Column, new_Queen_Row;
-        for (int column = 0; column < board.get_NQueen_Board().length; column++) 
-        {
-            cur_Queen_Row = Integer.MAX_VALUE;
-            cur_Queen_Column = column;
-            new_Queen_Column = column;
-            for (int i = 0; i < board.get_NQueen_Board().length; i++) 
-            {
-                if (board.get_NQueen_Board()[i][cur_Queen_Column] == 1) 
-                {
-                    cur_Queen_Row = i;
+    public ArrayList<NQueenBoard> childBoards(NQueenBoard board) {
+        ArrayList<NQueenBoard> successorList = new ArrayList<NQueenBoard>();
+
+        for (int c = 0; c < board.getBoard().length; c++) {
+            int cQR = Integer.MAX_VALUE; // Current Queen's row position
+            int cQC = c; // Current Queen's column position
+            int nQC = c; // New Queen's column position
+
+            // Find the current Queen's row position
+            for (int i = 0; i < board.getBoard().length; i++) {
+                if (board.getBoard()[i][cQC] == 1) {
+                    cQR = i;
                     break;
                 }
             }
-            for (int row = 0; row < board.get_NQueen_Board().length; row++) 
-            {
-                if (row != cur_Queen_Row && cur_Queen_Row != Integer.MAX_VALUE) 
-                {
-                    int[][] currentState = new int[board.get_NQueen_Board().length][board.get_NQueen_Board().length];
-                    get_Copied_State(board.get_NQueen_Board(), currentState);
-                    new_Queen_Row = row;
-                    // swap
-                    currentState[cur_Queen_Row][cur_Queen_Column] = 0;
-                    currentState[new_Queen_Row][new_Queen_Column] = 1;
+
+            for (int row = 0; row < board.getBoard().length; row++) {
+                if (row != cQR && cQR != Integer.MAX_VALUE) {
+                    int[][] currBoard = new int[board.getBoard().length][board.getBoard().length];
+
+                    // Create a copy of the current board configuration
+                    copyBoard(board.getBoard(), currBoard);
+
+                    int nQR = row; // New Queen's row position
+
+                    // Swap the positions of the current Queen and the new Queen
+                    currBoard[cQR][cQC] = 0;
+                    currBoard[nQR][nQC] = 1;
+
                     NQueenBoard newNQueenBoard = new NQueenBoard();
-                    newNQueenBoard.set_NQueen_Board(currentState);
-                    succesor_List.add(newNQueenBoard);
+                    newNQueenBoard.setBoard(currBoard);
+                    successorList.add(newNQueenBoard);
                 }
             }
         }
 
-        return succesor_List;
+        return successorList;
     }
 
 
-    /*
-        * This function is used for calculating the heuristic cost value of the given board by accepting single parameter i.e board which gives the current status of the board.
+
+        /*
+    * setH function is used for calculating the heuristic cost value of the given board.
+    * It accepts an NQueenBoard object as a parameter representing the current state of the board.
+    * It calculates the heuristic cost based on the number of conflicts (queens attacking each other) and updates the heuristic cost in the NQueenBoard object.
     */
-    public void set_Heuristic(NQueenBoard board) 
-    {
-        int[][] current_NQueen_Board = new int[board.get_NQueen_Board().length][board.get_NQueen_Board().length];
-        get_Copied_State(board.get_NQueen_Board(), current_NQueen_Board);
-        int length = board.get_NQueen_Board().length;
-        int[] row_Index = new int[length];
-        int[] col_Index = new int[length];
+    public void setH(NQueenBoard board) {
+        int[][] currBoard = new int[board.getBoard().length][board.getBoard().length];
+        copyBoard(board.getBoard(), currBoard);
+
+        int length = board.getBoard().length;
+        int[] rIndex = new int[length];
+        int[] cIndex = new int[length];
         int index = 0;
-        int hValue =0;
-        for (int col =0;col<length;col++)
-        {
-            for(int row=0;row<length;row++)
-            {
-                if (current_NQueen_Board[row][col] == 1) 
-                {
-                    row_Index[index] =row;
-                    col_Index[index] = col;
+        int hValue = 0;
+
+        // Find the row and column indices of the Queens
+        for (int col = 0; col < length; col++) {
+            for (int row = 0; row < length; row++) {
+                if (currBoard[row][col] == 1) {
+                    rIndex[index] = row;
+                    cIndex[index] = col;
                     index++;
                 }
             }
         }
-        boolean heuristic_Not_Checked_Flag = true;
-        for (int i = 0; i < row_Index.length; i++) 
-        {
-            for (int j = i + 1; j < row_Index.length; j++) 
-            {
-                heuristic_Not_Checked_Flag = true;
-                if (row_Index[i] == row_Index[j]) 
-                {
+
+        boolean hncFlag = true;
+
+        // Check for conflicts (Queens attacking each other)
+        for (int i = 0; i < rIndex.length; i++) {
+            for (int j = i + 1; j < rIndex.length; j++) {
+                hncFlag = true;
+
+                // Check for conflicts in the same row
+                if (rIndex[i] == rIndex[j]) {
                     hValue++;
                 }
-                if (col_Index[i] == col_Index[j]) 
-                {
+
+                // Check for conflicts in the same column
+                if (cIndex[i] == cIndex[j]) {
                     hValue++;
                 }
-                if (Math.abs(row_Index[i] - row_Index[j]) == Math.abs(col_Index[i] - col_Index[j])) 
-                {
+
+                // Check for conflicts in diagonals
+                if (Math.abs(rIndex[i] - rIndex[j]) == Math.abs(cIndex[i] - cIndex[j])) {
                     hValue++;
                 }
             }
-            if(!heuristic_Not_Checked_Flag) 
-            {
+
+            if (!hncFlag) {
                 hValue = Integer.MAX_VALUE;
             }
-            board.set_Heuristic_Cost(hValue);
+
+            board.setHCost(hValue); // Update the heuristic cost in the NQueenBoard object
         }
     }
-        /*
-        * Hill_Climb_Random_Restart_With_Sideways_Move is used for performing the random restart hill climb algorithm with considering the sideway moves by accepting count of Queens and returns count of passed moves
+
+    /*
+    * Hill_Climb_Random_Restart_With_Sideways_Move is used for performing the random restart hill climb algorithm
+    * with considering sideways moves. It accepts the number of queens (nqueen) and a flag indicating whether
+    * to display intermediate states (flag).
+    * It returns an array of integers containing the number of successful moves, iterations, failed moves, restart count, and restarts with failure.
     */
-    public int[]  Hill_Climb_Random_Restart_With_Sideways_Move(int nqueen,int task_To_Be_Done)
+
+    public int[]  Hill_Climb_Random_Restart_With_Sideways_Move(int nqueen, boolean flag)
     {
-        boolean Is_Passed = false, Is_Fail = false, update_Current_Node = false;
-        int Side_Moves_Count = 100, Count_Of_Side_Step = 0;
+        boolean IsSolved = false, IsFailed = false, updateCurrBoard = false;
+        int sideMovesCount = 100, sideStepCount = 0;
         int[] result = new int[6];
         ArrayList<NQueenBoard> next = new ArrayList<NQueenBoard>();
-        NQueenBoard nqb_next = new NQueenBoard();
-        NQueenBoard board = get_Random_State(nqueen);
-        set_Heuristic(board);
+        NQueenBoard currBoard = new NQueenBoard();
+        NQueenBoard board = getRandomBoard(nqueen);
+        setH(board);
         System.out.println("Starting State");
-        print_NQueen_Board(board);
-        while (!Is_Passed && !Is_Fail) 
+        showBoard(board);
+        while (!IsSolved && !IsFailed) 
         {
-            update_Current_Node = false;
-            next = find_The_Successors(board);
+            updateCurrBoard = false;
+            next = childBoards(board);
             int i=0;
             while(i<next.size())
             {
-                set_Heuristic(next.get(i));
+                setH(next.get(i));
                 i++;
             }
-            nqb_next = get_Next_Best_Successor(next);
-            if (nqb_next.get_Heuristic_Cost() == board.get_Heuristic_Cost()) 
+            currBoard = nextBestChild(next);
+            if (currBoard.getHCost() == board.getHCost()) 
             {
-                nqb_next = get_Next_Best_Successor(next);
+                currBoard = nextBestChild(next);
             }
-            if (board.get_Heuristic_Cost() == 0) 
+            if (board.getHCost() == 0) 
             {
                 succesfulMoveCount = +moveCount;
                 succesfulIterCount++;
-                Is_Passed = true;
-                 if(task_To_Be_Done == 2) {
+                IsSolved = true;
+                if(flag == true) {
                     System.out.println("  |   ");
                     System.out.println("  V   ");
                 }
                 System.out.println("Destination State");
-                print_NQueen_Board(board);
+                showBoard(board);
             } 
-            else if (nqb_next.get_Heuristic_Cost() < board.get_Heuristic_Cost()) 
+            else if (currBoard.getHCost() < board.getHCost()) 
             {
-                Count_Of_Side_Step =0;
-                if(task_To_Be_Done == 2) {
+                sideStepCount =0;
+                if(flag == true) {
                     System.out.println("  |   ");
                     System.out.println("  V   ");
-                    print_NQueen_Board(board);
+                    showBoard(board);
                 }
                 moveCount++;
-                update_Current_Node = true;
+                updateCurrBoard = true;
             }  
-            else if (nqb_next.get_Heuristic_Cost() == board.get_Heuristic_Cost() && Count_Of_Side_Step < Side_Moves_Count) 
+            else if (currBoard.getHCost() == board.getHCost() && sideStepCount < sideMovesCount) 
             {
-                Count_Of_Side_Step++;
-                if(task_To_Be_Done == 2) {
+                sideStepCount++;
+                if(flag == true) {
                     System.out.println("  |   ");
                     System.out.println("  V   ");
-                    print_NQueen_Board(board);
+                    showBoard(board);
                 }
                 moveCount++;
-                update_Current_Node = true;
+                updateCurrBoard = true;
             } 
             else 
             {
-                board = get_Random_State(nqueen);
-                set_Heuristic(board);
-                totalRestartsCount++;
-                if(task_To_Be_Done == 2) {
+                board = getRandomBoard(nqueen);
+                setH(board);
+                if(flag == true) {
                     System.out.println("  |   ");
                     System.out.println("  V   ");
-                    System.out.println("restarted");
-                    print_NQueen_Board(board);
+                    showBoard(board);
                 }
+                totalRestartsCount++;
                 restartFlag = true;
             }
-            if (update_Current_Node) 
+            if (updateCurrBoard) 
             {
-                board = nqb_next;
+                board = currBoard;
             }
         }
         if (restartFlag) 
@@ -380,124 +409,137 @@ public class NQueensProblem
         result[5] = restartCount;
         return result;
     }
-        /*
-        * This function get_Next_Best_Successor and is used to return the next possible best successor it accepts board_Array_list as parameter
-        * This function returns the NQueen board with next best successor
+            /*
+    * nextBestChild function is used to return the next possible best child among a list of successor boards.
+    * It accepts an ArrayList of NQueenBoard objects (board_Array_List) representing possible successor states.
+    * The function returns the NQueenBoard object representing the next best child state.
     */
-    public NQueenBoard get_Next_Best_Successor(ArrayList<NQueenBoard> board_Array_List) 
-    {
-        PriorityQueue<NQueenBoard> pq = new PriorityQueue<NQueenBoard>(board_Array_List.size(), new Heuristic_Cost_Comparator());
-        for (int i = 0; i < board_Array_List.size(); i++) 
-        {
+    public NQueenBoard nextBestChild(ArrayList<NQueenBoard> board_Array_List) {
+        PriorityQueue<NQueenBoard> pq = new PriorityQueue<NQueenBoard>(board_Array_List.size(), new hCost());
+
+        // Add all successor boards to a priority queue based on their heuristic cost
+        for (int i = 0; i < board_Array_List.size(); i++) {
             pq.add(board_Array_List.get(i));
         }
-        List<NQueenBoard> get_Next_Best_Successors_List = new ArrayList<NQueenBoard>();
-        NQueenBoard get_next_best_Successor = new NQueenBoard();
-        get_next_best_Successor = pq.poll();
-        int hcost = get_next_best_Successor.get_Heuristic_Cost();
-        get_Next_Best_Successors_List.add(get_next_best_Successor);
-        while (pq.peek().get_Heuristic_Cost() == hcost) 
-        {
-            get_Next_Best_Successors_List.add(pq.poll());
+
+        List<NQueenBoard> nextBestChildList = new ArrayList<NQueenBoard>();
+        NQueenBoard nextBestChild = new NQueenBoard();
+        nextBestChild = pq.poll();
+        int hcost = nextBestChild.getHCost();
+        nextBestChildList.add(nextBestChild);
+
+        // Retrieve all boards with the same heuristic cost as the first board
+        while (pq.peek().getHCost() == hcost) {
+            nextBestChildList.add(pq.poll());
         }
+
+        // Select a random board from the list of boards with the same heuristic cost
         Random rand = new Random();
-        int index = rand.nextInt(get_Next_Best_Successors_List.size());
-        get_next_best_Successor = get_Next_Best_Successors_List.get(index);
+        int index = rand.nextInt(nextBestChildList.size());
+        nextBestChild = nextBestChildList.get(index);
+
         pq.clear();
-        return get_next_best_Successor;
+        return nextBestChild;
     }
+
     
-    /*
-        * get_Random_State is used for generating the random NQueen board it takes nqueen integer as input 
-        * It returns a board with queens that are placed randomly
+        /*
+    * getRandomBoard function generates a random NQueenBoard with queens placed randomly on the board.
+    * It accepts an integer nqueen, representing the number of queens to be placed on the board.
+    * The function returns an NQueenBoard object with queens placed randomly.
     */
-    public NQueenBoard get_Random_State(int nqueen)
-    {
+    public NQueenBoard getRandomBoard(int nqueen) {
         NQueenBoard board = new NQueenBoard();
         int[][] new_State = new int[nqueen][nqueen];
         Random random = new Random();
-        for (int i=0;i<nqueen;i++){
-            int rand_Number = random.nextInt(nqueen-1);
-            for (int j=0;j<nqueen;j++){
-                if(j == rand_Number){
+
+        for (int i = 0; i < nqueen; i++) {
+            int rand_Number = random.nextInt(nqueen - 1);
+
+            for (int j = 0; j < nqueen; j++) {
+                if (j == rand_Number) {
                     new_State[j][i] = 1;
                 } else {
                     new_State[j][i] = 0;
                 }
             }
         }
-        board.set_NQueen_Board(new_State);
+
+        board.setBoard(new_State);
         return board;
     }
+
     
-    /*
-        * This get_copied_State function is used to copy the current state of the NQueen board and accepts sorurce and destinations of NQueens Board to copy
+        /*
+    * copyBoard function is used to copy the state of the source NQueenBoard to the destination NQueenBoard.
+    * It accepts two 2D integer arrays (src and dst) representing the source and destination boards, respectively.
+    * The function copies the state of the source board to the destination board.
     */
-    public void get_Copied_State(int[][] source_Node_State, int[][] destination_Node_State) 
-    {
-        for (int i = 0; i < source_Node_State.length; i++)
-        {
-            for (int j = 0; j < source_Node_State.length; j++)
-            {
-                destination_Node_State[i][j] = source_Node_State[i][j];
+    public void copyBoard(int[][] src, int[][] dst) {
+        for (int i = 0; i < src.length; i++) {
+            for (int j = 0; j < src.length; j++) {
+                dst[i][j] = src[i][j];
             }
         }
     }
 
+
     /*
-        * HillClimbrandomRestartWithoutSidewaysMove is used for performing the random restart hill climb algorithm without considering the sideway moves which take count of Queen as parameter and returns count of passed move, failed moves, iterations and no of required iterations
+    * Hill_Climb_Random_Restart_Without_Sideways_Move is used to perform the random restart hill climb algorithm without considering sideways moves.
+    * It accepts an integer nqueen representing the number of queens and a boolean flag indicating whether to display intermediate states.
+    * The function returns an array of integers representing successful move count, successful iteration count, failure move count, failure iteration count,
+    * total restart count, and restart count.
     */
-    public int[]  Hill_Climb_Random_Restart_Without_Sideways_Move(int nqueen,int task_To_Be_Done)
+    public int[]  Hill_Climb_Random_Restart_Without_Sideways_Move(int nqueen, boolean flag)
     {
-        int Count_Of_Side_Step = 0, Side_Moves_Count = 10;;
+        int sideStepCount = 0, sideMovesCount = 10;;
         int[] result = new int[6];
         ArrayList<NQueenBoard> next = new ArrayList<NQueenBoard>();
-        NQueenBoard nqb_next = new NQueenBoard();
-        boolean Is_Passed = false, Is_Fail = false, update_Current_Node = false;
-        NQueenBoard board = get_Random_State(nqueen);
-        set_Heuristic(board);
+        NQueenBoard currBoard = new NQueenBoard();
+        boolean IsSolved = false, IsFailed = false, updateCurrBoard = false;
+        NQueenBoard board = getRandomBoard(nqueen);
+        setH(board);
         System.out.println("Starting State");
-        print_NQueen_Board(board);
-        while (!Is_Passed) 
+        showBoard(board);
+        while (!IsSolved) 
         {
-            next = find_The_Successors(board);
+            next = childBoards(board);
             int i=0;
             while(i<next.size())
             {
-                set_Heuristic(next.get(i));
+                setH(next.get(i));
                 i++;
             }
-            nqb_next = get_Next_Best_Successor(next);
-            if (board.get_Heuristic_Cost() == 0) 
+            currBoard = nextBestChild(next);
+            if (board.getHCost() == 0) 
             {
                 succesfulMoveCount = +moveCount;
                 succesfulIterCount++;
-                Is_Passed = true;
-                 if(task_To_Be_Done == 2) {
+                IsSolved = true;
+                if(flag == true) {
                     System.out.println("  |   ");
                     System.out.println("  V   ");
                 }
                 System.out.println("Destination State");
-                print_NQueen_Board(board);
+                showBoard(board);
             } 
-            else if (nqb_next.get_Heuristic_Cost() < board.get_Heuristic_Cost()) 
+            else if (currBoard.getHCost() < board.getHCost()) 
             {
-                board = nqb_next;
-                if(task_To_Be_Done == 2) {
+                board = currBoard;
+                if(flag == true) {
                     System.out.println("  |   ");
                     System.out.println("  V   ");
-                    print_NQueen_Board(board);
+                    showBoard(board);
                 }
                 moveCount++;
             } else 
             {
-                board = get_Random_State(nqueen);
-                set_Heuristic(board);
-                if(task_To_Be_Done == 2) {
+                board = getRandomBoard(nqueen);
+                setH(board);
+                if(flag == true) {
                     System.out.println("  |   ");
                     System.out.println("  V   ");
-                    System.out.println("*****restarted******");
-                    print_NQueen_Board(board);
+                    showBoard(board);
                 }
                 totalRestartsCount++;
                 restartFlag = true;
@@ -518,84 +560,81 @@ public class NQueensProblem
 
     
     /*
-        * Hill_Climb_Search_With_Sideways_Move is used for performing the hill climb algorithm with considering the sideway moves it accepts nqeen integer as a parameter and returns an array type of passed move.
+    * Hill_Climb_Search_With_Sideways_Move is used to perform the hill climb algorithm with considering sideways moves.
+    * It accepts an integer nqueen representing the number of queens and a boolean flag indicating whether to display intermediate states.
+    * The function returns an array of integers representing successful move count, successful iteration count, failure move count, and failure iteration count.
     */
-    public int[]  Hill_Climb_Search_With_Sideways_Move(int nqueen,int task_To_Be_Done)
+    public int[]  Hill_Climb_Search_With_Sideways_Move(int nqueen, boolean flag)
     {
         int side_Moves_count = 100;
-        boolean is_Passed = false,is_Fail = false, update_Current_Node = false;;
+        boolean isSolved = false,isFailure = false, updateCurrBoard = false;;
         int count_Of_Side_Step = 0;
-        ArrayList<NQueenBoard> successor = new ArrayList<NQueenBoard>();
+        ArrayList<NQueenBoard> child = new ArrayList<NQueenBoard>();
         NQueenBoard nqb_successor = new NQueenBoard();
         int[] result = new int[4];
-        NQueenBoard board = get_Random_State(nqueen);
-        set_Heuristic(board);
+        NQueenBoard board = getRandomBoard(nqueen);
+        setH(board);
         System.out.println("Starting State");
-        print_NQueen_Board(board);
-        while (!is_Fail && !is_Passed) 
+        showBoard(board);
+        while (!isFailure && !isSolved) 
         {
-            update_Current_Node = false;
-            successor = find_The_Successors(board);
+            updateCurrBoard = false;
+            child = childBoards(board);
             int i=0;
-            while(i<successor.size())
+            while(i<child.size())
             {
-                set_Heuristic(successor.get(i));
+                setH(child.get(i));
                 i++;
             }
-            nqb_successor = get_Next_Best_Successor(successor);
-            if (nqb_successor.get_Heuristic_Cost() == board.get_Heuristic_Cost()) 
+            nqb_successor = nextBestChild(child);
+            if (nqb_successor.getHCost() == board.getHCost()) 
             {
-                nqb_successor = get_Next_Best_Successor(successor);
+                nqb_successor = nextBestChild(child);
             }
-            if (board.get_Heuristic_Cost() == 0) 
+            if (board.getHCost() == 0) 
             {
                 succesfulMoveCount = succesfulMoveCount + moveCount;
                 succesfulIterCount++;
-                is_Passed = true;
-                 if(task_To_Be_Done == 2) {
+                isSolved = true;
+                if(flag == true) {
                     System.out.println("  |   ");
                     System.out.println("  V   ");
                 }
                 System.out.println("Destination State");
-                print_NQueen_Board(board);
+                showBoard(board);
             } 
-            else if (board.get_Heuristic_Cost()>nqb_successor.get_Heuristic_Cost()) 
+            else if (board.getHCost()>nqb_successor.getHCost()) 
             {
-                // updating the current node of the nQueen with best possible successor
+                // updating the current node of the nQueen with best possible child
                 count_Of_Side_Step =0;
-                if(task_To_Be_Done == 2) {
+                if(flag == true) {
                     System.out.println("  |   ");
                     System.out.println("  V   ");
-                    print_NQueen_Board(board);
+                    showBoard(board);
                 }
                 moveCount++;
-                update_Current_Node = true;
+                updateCurrBoard = true;
             }  
-            else if (board.get_Heuristic_Cost() == nqb_successor.get_Heuristic_Cost() && side_Moves_count>count_Of_Side_Step) 
+            else if (board.getHCost() == nqb_successor.getHCost() && side_Moves_count>count_Of_Side_Step) 
             {
                 // by moving the sideways 
                 count_Of_Side_Step++;
-                if(task_To_Be_Done == 2) {
-                    System.out.println("  |   ");
-                    System.out.println("  V   ");
-                    print_NQueen_Board(board);
-                }
                 moveCount++;
-                update_Current_Node = true;
+                updateCurrBoard = true;
             } 
             else 
             {
                 failureIterCount++;
                 failureMoveCount = +moveCount;
-                is_Fail = true;
-                if(task_To_Be_Done == 2) {
+                isFailure = true;
+                if(flag == true) {
                     System.out.println("  |   ");
                     System.out.println("  V   ");
                 }
                 System.out.println("Local Minima State");
-                print_NQueen_Board(board);
+                showBoard(board);
             }
-            if (update_Current_Node) 
+            if (updateCurrBoard) 
             {
                 board = nqb_successor;
             }
@@ -606,27 +645,25 @@ public class NQueensProblem
         result[3] = failureIterCount;
         return result;
     }
-    /*
-        * printNQueenBoard is used for printing NQueen board in the console by accepting parameter called b which is representing the NQueen board
+        /*
+    * showBoard is used to display the NQueen board on the console.
+    * It accepts a parameter b of type NQueenBoard, which represents the board to be displayed.
+    * The function prints the board with queens represented as 'Q' and empty cells as '*'.
+    * It also displays the number of collisions (heuristic cost).
     */
-    public void print_NQueen_Board(NQueenBoard b)
-    {
-        for (int i = 0; i < b.get_NQueen_Board().length; i++) 
-        {
-            for (int j = 0; j < b.get_NQueen_Board().length; j++) 
-            {
-                String print_Value = "*";
-                if ((b.get_NQueen_Board())[i][j] == 1) 
-                {
-                    print_Value = "Q";
+    public void showBoard(NQueenBoard b) {
+        for (int i = 0; i < b.getBoard().length; i++) {
+            for (int j = 0; j < b.getBoard().length; j++) {
+                String val = "*";
+                if ((b.getBoard())[i][j] == 1) {
+                    val = "Q";
                 }
-                System.out.print(print_Value+" ");
+                System.out.print(val + " ");
             }
             System.out.println();
         }
-        int collisions = b.get_Heuristic_Cost();
-        System.out.println("No.Of Collisions: "+ collisions);
-        System.out.println();
-    }    
+        int col = b.getHCost();
+    }
+   
     
 }
