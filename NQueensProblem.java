@@ -45,6 +45,9 @@ public class NQueensProblem
             if (i<5){
                 flag = true;
             }
+            else{
+                flag=false;
+            }
             if(selection==1){
                 res = algorithm.Hill_Climb_Search(queens,flag);
             }
@@ -101,8 +104,10 @@ public class NQueensProblem
                 // Initialize the current board.
 
         setH(board);
-        System.out.println("Starting State");
-        showBoard(board);
+        if(flag==true){
+            System.out.println("Starting State");
+            showBoard(board);
+        }
         while (!isFailure && !isSolved) 
         {
             child = childBoards(board);
@@ -123,8 +128,10 @@ public class NQueensProblem
                     System.out.println("  |   ");
                     System.out.println("  V   ");
                 }
-                System.out.println("Destination State");
-                showBoard(board);
+                if(flag==true){
+                    System.out.println("Destination State");
+                    showBoard(board);
+                }
                 succesfulMoveCount = +moveCount;
                 ++succesfulIterCount;
                 isSolved = true;        
@@ -147,8 +154,10 @@ public class NQueensProblem
                     System.out.println("  |   ");
                     System.out.println("  V   ");
                 }
-                System.out.println("Local Minima State");
-                showBoard(board);
+                if (flag==true){
+                    System.out.println("Local Minima State");
+                    showBoard(board);
+                }
                 ++failureIterCount;
                 failureMoveCount = +moveCount;
                 isFailure = true; 
@@ -329,8 +338,10 @@ public class NQueensProblem
         NQueenBoard currBoard = new NQueenBoard();
         NQueenBoard board = getRandomBoard(nqueen);
         setH(board);
-        System.out.println("Starting State");
-        showBoard(board);
+        if(flag==true){
+            System.out.println("Starting State");
+            showBoard(board);
+        }
         while (!IsSolved && !IsFailed) 
         {
             updateCurrBoard = false;
@@ -355,8 +366,10 @@ public class NQueensProblem
                     System.out.println("  |   ");
                     System.out.println("  V   ");
                 }
-                System.out.println("Destination State");
-                showBoard(board);
+                if(flag==true){
+                    System.out.println("Destination State");
+                    showBoard(board);
+                }
             } 
             else if (currBoard.getHCost() < board.getHCost()) 
             {
@@ -499,8 +512,10 @@ public class NQueensProblem
         boolean IsSolved = false, IsFailed = false, updateCurrBoard = false;
         NQueenBoard board = getRandomBoard(nqueen);
         setH(board);
-        System.out.println("Starting State");
-        showBoard(board);
+        if(flag==true){
+            System.out.println("Starting State");
+            showBoard(board);
+        }
         while (!IsSolved) 
         {
             next = childBoards(board);
@@ -520,8 +535,10 @@ public class NQueensProblem
                     System.out.println("  |   ");
                     System.out.println("  V   ");
                 }
-                System.out.println("Destination State");
-                showBoard(board);
+                if(flag==true){
+                    System.out.println("Destination State");
+                    showBoard(board);
+                }
             } 
             else if (currBoard.getHCost() < board.getHCost()) 
             {
@@ -574,8 +591,10 @@ public class NQueensProblem
         int[] result = new int[4];
         NQueenBoard board = getRandomBoard(nqueen);
         setH(board);
-        System.out.println("Starting State");
-        showBoard(board);
+        if(flag==true){
+            System.out.println("Starting State");
+            showBoard(board);
+        }
         while (!isFailure && !isSolved) 
         {
             updateCurrBoard = false;
@@ -600,8 +619,10 @@ public class NQueensProblem
                     System.out.println("  |   ");
                     System.out.println("  V   ");
                 }
-                System.out.println("Destination State");
-                showBoard(board);
+                if(flag==true){
+                    System.out.println("Destination State");
+                    showBoard(board);
+                }
             } 
             else if (board.getHCost()>nqb_successor.getHCost()) 
             {
@@ -631,8 +652,10 @@ public class NQueensProblem
                     System.out.println("  |   ");
                     System.out.println("  V   ");
                 }
-                System.out.println("Local Minima State");
-                showBoard(board);
+                if (flag==true){
+                    System.out.println("Local Minima State");
+                    showBoard(board);
+                }
             }
             if (updateCurrBoard) 
             {
